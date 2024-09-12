@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Barcode Scanner</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        #video { width: 100%; height: auto; }
+        #result { font-size: 1.5em; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Scan a Barcode</h1>
+    <video id="video" autoplay></video>
+    <p id="result">Waiting for scan...</p>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+    <script>
+        // Initialize the scanner
+        Quagga.init({
+            inputStream: {
+                name: "Live",
+                type: "LiveStream",
+                target: document.querySelector('#video'), // Or '#yourElement' (optional)
+                constraints: {
+                    facingMode: "environment" // Use the rear camera
+                }
+            },
+            decoder: {
+                readers: ["ean_reader", "upc_reader", "code_128_reader"] // Add more if needed
+            }
+        }, function (err) {
+            if (err) {
+                console.log(err);
+                return;
+            }
+            Quagga.start();
+        });
+
+        // Event when barcode is detected
+        Quagga.onDetected(function (data) {
+            let barcode = data.codeResult.code;
+            document.getElementById('result').innerText = 'Barcode: ' + barcode;
+            // Call the API to lookup the product
+            lookupBarcode(barcode);
+        });
+
+        // Example API call function (you'll need to use a real API here)
+        function lookupBarcode(barcode) {
+         fetch(`https://api.upcdatabase.org/product/${barcode}?apikey=YOUR_API_KEY`)
+          .then(response => response.json())
+           .then(data => {
+            document.getElementById('result').innerText += `\nProduct: ${data.title || 'Unknown'}`;
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+    </script>
+</body>
+</html>
