@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Barcode Scanner with BarcodeDetector</title>
+    <title>Barcode Scanner with QuaggaJS</title>
     <style>
         #preview {
             width: 100%;
@@ -15,42 +15,53 @@
 </head>
 <body>
     <h1>Scan a Barcode</h1>
-    <video id="preview" autoplay></video>
+    <div id="preview"></div>
     <div id="barcode-info">
         <h2 id="barcode-value"></h2>
+        <p id="barcode-validation"></p>
     </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
     <script>
-        async function startScanning() {
-            const videoElement = document.getElementById('preview');
-            const barcodeDetector = new BarcodeDetector({ formats: ['code_128', 'ean_13', 'upc_a'] });
-
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                videoElement.srcObject = stream;
-
-                videoElement.onloadedmetadata = () => {
-                    videoElement.play();
-                    scanBarcode();
-                };
-                
-                async function scanBarcode() {
-                    try {
-                        const barcodes = await barcodeDetector.detect(videoElement);
-                        if (barcodes.length > 0) {
-                            const barcode = barcodes[0].rawValue;
-                            console.log('Barcode detected:', barcode);
-                            document.getElementById('barcode-value').textContent = `Barcode: ${barcode}`;
-                        }
-                        requestAnimationFrame(scanBarcode);
-                    } catch (error) {
-                        console.error('Barcode detection error:', error);
-                        requestAnimationFrame(scanBarcode);
+        function startScanning() {
+            Quagga.init({
+                inputStream: {
+                    type: "LiveStream",
+                    constraints: {
+                        facingMode: "environment"
                     }
+                },
+                decoder: {
+                    readers: [
+                        "code_128_reader",
+                        "ean_reader",
+                        "ean_8_reader",
+                        "upc_reader",
+                        "upc_e_reader"
+                    ]
                 }
-            } catch (error) {
-                console.error('Camera access error:', error);
-            }
+            }, function(err) {
+                if (err) {
+                    console.error(err);
+                    return;
+                }
+                Quagga.start();
+            });
+
+            Quagga.onDetected(function(data) {
+                console.log("Barcode detected:", data.codeResult.code);
+                validateBarcode(data.codeResult.code);
+            });
         }
+
+        function validateBarcode(barcode) {
+            console.log('Validating barcode:', barcode);
+            // Example validation logic
+            const validBarcodeFormats = ['UPC_A', 'EAN_13', 'CODE_128'];
+            const isValid = validBarcodeFormats.some(format => barcode.includes(format));
+            document.getElementById('barcode-value').textContent = `Barcode: ${barcode}`;
+            document.getElementById('barcode-validation').textContent = isValid ? 'Valid Barcode' : 'Invalid Barcode';
+        }
+
         window.addEventListener('load', startScanning);
     </script>
 </body>
