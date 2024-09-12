@@ -30,8 +30,9 @@
         const videoElement = document.getElementById('preview');
 
         // Function to start scanning
-        function startScanning() {
-            codeReader.listVideoInputDevices().then((videoInputDevices) => {
+        async function startScanning() {
+            try {
+                const videoInputDevices = await codeReader.listVideoInputDevices();
                 if (videoInputDevices.length > 0) {
                     const firstDeviceId = videoInputDevices[0].deviceId;
                     codeReader.decodeFromVideoDevice(firstDeviceId, videoElement, (result, error) => {
@@ -40,15 +41,15 @@
                             lookupProduct(result.text);
                         }
                         if (error) {
-                            console.error(error);
+                            console.error("Error during barcode scanning:", error);
                         }
                     });
                 } else {
                     console.error('No video input devices found');
                 }
-            }).catch((err) => {
-                console.error(err);
-            });
+            } catch (err) {
+                console.error('Error initializing barcode reader:', err);
+            }
         }
 
         // Function to fetch product details
@@ -64,7 +65,7 @@
                         displayProductInfo(data);
                     }
                 })
-                .catch(error => console.error('Error:', error));
+                .catch(error => console.error('Error fetching product data:', error));
         }
 
         // Function to display product information
@@ -79,5 +80,6 @@
     </script>
 </body>
 </html>
+
 
 
