@@ -29,25 +29,31 @@
         const codeReader = new ZXing.BrowserBarcodeReader();
         const videoElement = document.getElementById('preview');
 
-        // Function to start scanning
+        // Start scanning
         function startScanning() {
             codeReader.listVideoInputDevices().then((videoInputDevices) => {
                 if (videoInputDevices.length > 0) {
                     const firstDeviceId = videoInputDevices[0].deviceId;
-                    // Stop any previous streams if they exist
+
+                    // Stop any previous video streams
                     if (videoElement.srcObject) {
                         const stream = videoElement.srcObject;
                         const tracks = stream.getTracks();
                         tracks.forEach(track => track.stop());
                         videoElement.srcObject = null;
                     }
+
                     codeReader.decodeFromVideoDevice(firstDeviceId, videoElement, (result, error) => {
                         if (result) {
                             console.log("Barcode detected:", result.text);
-                            lookupProduct(result.text);
+                            // Add a debounce to avoid multiple requests for the same barcode
+                            if (typeof window.lastBarcode === 'undefined' || window.lastBarcode !== result.text) {
+                                window.lastBarcode = result.text;
+                                lookupProduct(result.text);
+                            }
                         }
                         if (error) {
-                            console.error('Error during scanning:', error);
+                            console.error('Scanning error:', error);
                         }
                     }).catch(err => {
                         console.error('Error setting up video stream:', err);
@@ -55,7 +61,7 @@
                 } else {
                     console.error('No video input devices found');
                 }
-            }).catch((err) => {
+            }).catch(err => {
                 console.error('Error listing video input devices:', err);
             });
         }
@@ -66,21 +72,29 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.error) {
-                        document.getElementById('product-name').textContent = data.error;
-                        document.getElementById('product-image').src = '';
-                        document.getElementById('product-description').textContent = '';
+                        displayError(data.error);
                     } else {
                         displayProductInfo(data);
                     }
                 })
-                .catch(error => console.error('Error:', error));
+                .catch(error => {
+                    console.error('Fetch error:', error);
+                    displayError('Error fetching product information');
+                });
         }
 
         // Function to display product information
         function displayProductInfo(product) {
-            document.getElementById('product-name').textContent = product.name;
-            document.getElementById('product-image').src = product.imageUrl;
-            document.getElementById('product-description').textContent = product.description;
+            document.getElementById('product-name').textContent = product.name || 'No product name available';
+            document.getElementById('product-image').src = product.imageUrl || '';
+            document.getElementById('product-description').textContent = product.description || 'No product description available';
+        }
+
+        // Function to display error messages
+        function displayError(message) {
+            document.getElementById('product-name').textContent = message;
+            document.getElementById('product-image').src = '';
+            document.getElementById('product-description').textContent = '';
         }
 
         // Start scanning when the page loads
@@ -88,4 +102,5 @@
     </script>
 </body>
 </html>
+
 
