@@ -63,20 +63,26 @@
         }
 
         function lookupProduct(barcode) {
-            fetch(`http://localhost:5000/api/products/${barcode}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.error) {
-                        displayError(data.error);
-                    } else {
-                        displayProductInfo(data);
-                    }
-                })
-                .catch(error => {
-                    console.error('Fetch error:', error);
-                    displayError('Error fetching product information');
-                });
-        }
+    fetch(`http://localhost:5000/api/products/${barcode}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.error) {
+                displayError(data.error);
+            } else {
+                displayProductInfo(data);
+            }
+        })
+        .catch(error => {
+            console.error('Fetch error:', error);
+            displayError('Error fetching product information');
+        });
+}
+
 
         function displayProductInfo(product) {
             document.getElementById('product-name').textContent = product.name || 'No product name available';
