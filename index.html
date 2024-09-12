@@ -29,25 +29,29 @@
         const codeReader = new ZXing.BrowserBarcodeReader();
         const videoElement = document.getElementById('preview');
 
-        // Start video stream
-        codeReader.listVideoInputDevices().then((videoInputDevices) => {
-            if (videoInputDevices.length > 0) {
-                const firstDeviceId = videoInputDevices[0].deviceId;
-                codeReader.decodeFromVideoDevice(firstDeviceId, videoElement, (result, error) => {
-                    if (result) {
-                        lookupProduct(result.text);
-                    }
-                    if (error) {
-                        console.error(error);
-                    }
-                });
-            } else {
-                console.error('No video input devices found');
-            }
-        }).catch((err) => {
-            console.error(err);
-        });
+        // Function to start scanning
+        function startScanning() {
+            codeReader.listVideoInputDevices().then((videoInputDevices) => {
+                if (videoInputDevices.length > 0) {
+                    const firstDeviceId = videoInputDevices[0].deviceId;
+                    codeReader.decodeFromVideoDevice(firstDeviceId, videoElement, (result, error) => {
+                        if (result) {
+                            console.log("Barcode detected:", result.text);
+                            lookupProduct(result.text);
+                        }
+                        if (error) {
+                            console.error(error);
+                        }
+                    });
+                } else {
+                    console.error('No video input devices found');
+                }
+            }).catch((err) => {
+                console.error(err);
+            });
+        }
 
+        // Function to fetch product details
         function lookupProduct(barcode) {
             fetch(`http://localhost:5000/api/products/${barcode}`)
                 .then(response => response.json())
@@ -63,12 +67,17 @@
                 .catch(error => console.error('Error:', error));
         }
 
+        // Function to display product information
         function displayProductInfo(product) {
             document.getElementById('product-name').textContent = product.name;
             document.getElementById('product-image').src = product.imageUrl;
             document.getElementById('product-description').textContent = product.description;
         }
+
+        // Start scanning when the page loads
+        window.addEventListener('load', startScanning);
     </script>
 </body>
 </html>
+
 
