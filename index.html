@@ -23,11 +23,20 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
     <script>
         function startScanning() {
+            const previewElement = document.querySelector('#preview');
+            if (!previewElement) {
+                console.error('Preview element not found');
+                return;
+            }
+
             Quagga.init({
                 inputStream: {
                     type: "LiveStream",
+                    target: previewElement, // Set target to the correct DOM element
                     constraints: {
-                        facingMode: "environment"
+                        facingMode: "environment",
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
                     }
                 },
                 decoder: {
@@ -41,7 +50,7 @@
                 }
             }, function(err) {
                 if (err) {
-                    console.error(err);
+                    console.error('Quagga initialization error:', err);
                     return;
                 }
                 Quagga.start();
@@ -66,5 +75,6 @@
     </script>
 </body>
 </html>
+
 
 
