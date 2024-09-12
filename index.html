@@ -1,105 +1,62 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Barcode Scanner</title>
+    <title>Barcode Scanner with BarcodeDetector</title>
     <style>
         #preview {
             width: 100%;
             height: auto;
             border: 1px solid black;
         }
-        #product-info {
+        #barcode-info {
             margin-top: 20px;
-        }
-        #product-info img {
-            max-width: 100px;
         }
     </style>
 </head>
 <body>
     <h1>Scan a Barcode</h1>
     <video id="preview" autoplay></video>
-    <div id="product-info">
-        <h2 id="product-name"></h2>
-        <img id="product-image" src="" alt="Product Image"/>
-        <p id="product-description"></p>
+    <div id="barcode-info">
+        <h2 id="barcode-value"></h2>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/@zxing/library@latest/umd/index.min.js"></script>
     <script>
-        const codeReader = new ZXing.BrowserBarcodeReader();
-        const videoElement = document.getElementById('preview');
+        async function startScanning() {
+            const videoElement = document.getElementById('preview');
+            const barcodeDetector = new BarcodeDetector({ formats: ['code_128', 'ean_13', 'upc_a'] });
 
-        function startScanning() {
-            codeReader.listVideoInputDevices().then((videoInputDevices) => {
-                if (videoInputDevices.length > 0) {
-                    const firstDeviceId = videoInputDevices[0].deviceId;
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                videoElement.srcObject = stream;
 
-                    // Stop any previous video streams
-                    if (videoElement.srcObject) {
-                        const stream = videoElement.srcObject;
-                        const tracks = stream.getTracks();
-                        tracks.forEach(track => track.stop());
-                        videoElement.srcObject = null;
+                videoElement.onloadedmetadata = () => {
+                    videoElement.play();
+                    scanBarcode();
+                };
+                
+                async function scanBarcode() {
+                    try {
+                        const barcodes = await barcodeDetector.detect(videoElement);
+                        if (barcodes.length > 0) {
+                            const barcode = barcodes[0].rawValue;
+                            console.log('Barcode detected:', barcode);
+                            document.getElementById('barcode-value').textContent = `Barcode: ${barcode}`;
+                        }
+                        requestAnimationFrame(scanBarcode);
+                    } catch (error) {
+                        console.error('Barcode detection error:', error);
+                        requestAnimationFrame(scanBarcode);
                     }
-
-                    // Start video stream and scan
-                    codeReader.decodeFromVideoDevice(firstDeviceId, videoElement, (result, error) => {
-                        if (result) {
-                            console.log("Barcode detected:", result.text);
-                            lookupProduct(result.text);
-                        }
-                        if (error) {
-                            console.error('Scanning error:', error);
-                        }
-                    }).catch(err => {
-                        console.error('Error setting up video stream:', err);
-                    });
-                } else {
-                    console.error('No video input devices found');
                 }
-            }).catch(err => {
-                console.error('Error listing video input devices:', err);
-            });
-        }
-
-        function lookupProduct(barcode) {
-    fetch(`http://localhost:5000/api/products/${barcode}`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            } catch (error) {
+                console.error('Camera access error:', error);
             }
-            return response.json();
-        })
-        .then(data => {
-            if (data.error) {
-                displayError(data.error);
-            } else {
-                displayProductInfo(data);
-            }
-        })
-        .catch(error => {
-            console.error('Fetch error:', error);
-            displayError('Error fetching product information');
-        });
-}
-
-
-        function displayProductInfo(product) {
-            document.getElementById('product-name').textContent = product.name || 'No product name available';
-            document.getElementById('product-image').src = product.imageUrl || '';
-            document.getElementById('product-description').textContent = product.description || 'No product description available';
         }
 
-        function displayError(message) {
-            document.getElementById('product-name').textContent = message;
-            document.getElementById('product-image').src = '';
-            document.getElementById('product-description').textContent = '';
-        }
-        // Start scanning when the page loads
         window.addEventListener('load', startScanning);
     </script>
 </body>
 </html>
+
 
 
 
