@@ -24,14 +24,14 @@
         <img id="product-image" src="" alt="Product Image"/>
         <p id="product-description"></p>
     </div>
-    <script src="https://unpkg.com/@zxing/library@latest"></script>
+    <script src="https://unpkg.com/@zxing/library@1.14.0"></script>
     <script>
         const codeReader = new ZXing.BrowserBarcodeReader();
         const videoElement = document.getElementById('preview');
 
-        // Start scanning
-        function startScanning() {
-            codeReader.listVideoInputDevices().then((videoInputDevices) => {
+        async function startScanning() {
+            try {
+                const videoInputDevices = await codeReader.listVideoInputDevices();
                 if (videoInputDevices.length > 0) {
                     const firstDeviceId = videoInputDevices[0].deviceId;
 
@@ -43,30 +43,24 @@
                         videoElement.srcObject = null;
                     }
 
-                    codeReader.decodeFromVideoDevice(firstDeviceId, videoElement, (result, error) => {
+                    // Start video stream and scan
+                    await codeReader.decodeFromVideoDevice(firstDeviceId, videoElement, (result, error) => {
                         if (result) {
                             console.log("Barcode detected:", result.text);
-                            // Add a debounce to avoid multiple requests for the same barcode
-                            if (typeof window.lastBarcode === 'undefined' || window.lastBarcode !== result.text) {
-                                window.lastBarcode = result.text;
-                                lookupProduct(result.text);
-                            }
+                            lookupProduct(result.text);
                         }
                         if (error) {
                             console.error('Scanning error:', error);
                         }
-                    }).catch(err => {
-                        console.error('Error setting up video stream:', err);
                     });
                 } else {
                     console.error('No video input devices found');
                 }
-            }).catch(err => {
-                console.error('Error listing video input devices:', err);
-            });
+            } catch (err) {
+                console.error('Error starting scanner:', err);
+            }
         }
 
-        // Function to fetch product details
         function lookupProduct(barcode) {
             fetch(`http://localhost:5000/api/products/${barcode}`)
                 .then(response => response.json())
@@ -83,14 +77,12 @@
                 });
         }
 
-        // Function to display product information
         function displayProductInfo(product) {
             document.getElementById('product-name').textContent = product.name || 'No product name available';
             document.getElementById('product-image').src = product.imageUrl || '';
             document.getElementById('product-description').textContent = product.description || 'No product description available';
         }
 
-        // Function to display error messages
         function displayError(message) {
             document.getElementById('product-name').textContent = message;
             document.getElementById('product-image').src = '';
@@ -102,5 +94,6 @@
     </script>
 </body>
 </html>
+
 
 
