@@ -18,13 +18,13 @@
 </head>
 <body>
     <h1>Scan a Barcode</h1>
+    <a href="camera-test.html"><button>Camera Test</button></a>
     <video id="preview" autoplay></video>
     <div id="product-info">
         <h2 id="product-name"></h2>
         <img id="product-image" src="" alt="Product Image"/>
         <p id="product-description"></p>
     </div>
-    <a href="camera-test.html">Camera Test</a>
     <script src="https://unpkg.com/@zxing/library@latest"></script>
     <script>
         const codeReader = new ZXing.BrowserBarcodeReader();
