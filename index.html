@@ -13,6 +13,7 @@
 <body>
     <h1>Scan a Barcode</h1>
     <div id="preview"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quaggaJS/0.12.1/quagga.min.js"></script>
     <script>
         function startScanning() {
             Quagga.init({
@@ -63,7 +64,7 @@
         function displayError(message) {
             console.log(message);
         }
-        
+
         // Start scanning when the page loads
         window.addEventListener('load', startScanning);
     </script>
